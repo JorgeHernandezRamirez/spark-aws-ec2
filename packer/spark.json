@@ -1,0 +1,49 @@
+{
+    "variables": {
+      "version": "0.1.0",
+      "region": "{{ env `AWS_REGION`}}",
+      "environment": "{{ env `ENVIRONMENT`}}"
+    },
+    "builders": [{
+      "name": "spark",
+      "temporary_security_group_source_cidrs": "{{ user `public_ip_cidr` }}",
+      "type": "amazon-ebs",
+      "region": "{{user `region`}}",
+      "ami_name": "spark-{{timestamp}}",
+      "source_ami_filter": {
+        "filters": {
+          "virtualization-type": "hvm",
+          "name": "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server*",
+          "root-device-type": "ebs"
+        },
+        "owners": ["099720109477"],
+        "most_recent": true
+      },
+      "instance_type": "t3.micro",
+      "ssh_username": "ubuntu",
+      "ssh_pty": false,
+      "tags": {
+        "ami_purpose": "spark",
+        "ami_version" : "{{user `version`}}"
+      }
+    }],
+    "provisioners": [{
+      "type": "shell",
+      "inline": [
+        "echo 'debconf debconf/frontend select Noninteractive' | sudo debconf-set-selections",
+        "sudo rm /var/cache/debconf/*.dat",
+        "sudo apt-get install -y -q",
+        "sleep 20",
+        "sudo apt-get update",
+        "sudo apt-get install python-pip -y",
+        "sudo -H pip install ansible"
+      ]
+    },
+    {
+      "type": "ansible-local",
+      "playbook_file": "ansible/spark.yml",
+      "playbook_dir": "ansible",
+      "extra_arguments": [ "--extra-vars \"Environment={{user `environment`}}\"" ]
+    }]
+  }
+  
