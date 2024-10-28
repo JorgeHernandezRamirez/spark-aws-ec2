@@ -6,7 +6,7 @@
 trigger:
 - master
 
-pool: "Azure Pipelines"
+pool: "ic-pool"
 
 steps:
 - script: echo Hello, world!
